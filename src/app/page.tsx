@@ -493,14 +493,14 @@ function VerificationInner() {
 
   type AppState = "loading" | "result" | "error";
   const [appState, setAppState] = useState<AppState>("loading");
-  const [msgIdx, setMsgIdx] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   const [resultRow, setResultRow] = useState<VerificationRow | null>(null);
   const [editUrl, setEditUrl] = useState<string | null>(editUrlParam);
   const [barReady, setBarReady] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const msgRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef(Date.now());
 
   useEffect(() => {
