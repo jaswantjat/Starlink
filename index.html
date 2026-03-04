@@ -655,9 +655,14 @@
 
   <!-- ── JS ───────────────────────────────────────────── -->
   <script>
-    const N8N_POLL_URL = 'https://primary-production-903a.up.railway.app/webhook/poll-ai-result';
-    const POLL_INTERVAL = 3000;
-    const MAX_WAIT = 90000;
+    // ── CONFIG ───────────────────────────────────────────────────
+    // Polls Baserow directly — no n8n middleman needed.
+    // The existing n8n AI workflow saves results to Table 814 as it
+    // already does. This page just reads it.
+    const BASEROW = 'https://baserow-production-1daf.up.railway.app/api/database/rows';
+    const BR_TOKEN = 'Token ygblMAbPhFxJA2cixOi25nlGmj5DBLYQ';
+    const POLL_MS = 3000;   // poll every 3 seconds
+    const MAX_WAIT = 90000;  // give up after 90 s
 
     const params = new URLSearchParams(window.location.search);
     const rowId = params.get('row_id');
@@ -665,34 +670,34 @@
     let pollTimer = null, stepTimer = null, startTime = Date.now(), stepIdx = 0;
     const steps = ['step-1', 'step-2', 'step-3', 'step-4'];
 
+    // ── STEP ANIMATOR ────────────────────────────────────────────
     function advanceStep() {
       const prev = steps[stepIdx - 1];
-      if (prev) {
-        const el = document.getElementById(prev);
-        el.classList.remove('active'); el.classList.add('done');
-      }
-      if (stepIdx < steps.length) {
-        document.getElementById(steps[stepIdx]).classList.add('active');
-        stepIdx++;
-      }
+      if (prev) { const el = document.getElementById(prev); el.classList.remove('active'); el.classList.add('done'); }
+      if (stepIdx < steps.length) { document.getElementById(steps[stepIdx]).classList.add('active'); stepIdx++; }
     }
 
+    // ── HELPERS ──────────────────────────────────────────────────
     function cls(score, estado) {
       if ((estado || '').toUpperCase() !== 'APROBADO') return 'fail';
       return score >= 45 ? 'pass' : 'risk';
     }
-
     function showState(id) {
       ['state-loading', 'state-result', 'state-error'].forEach(s => {
-        const el = document.getElementById(s);
-        el.style.display = (s === id) ? 'flex' : 'none';
+        document.getElementById(s).style.display = s === id ? 'flex' : 'none';
       });
     }
 
-    function renderResult(data) {
-      const r = data.result;
-      const score = Number(r.puntuacion_total) || 0;
-      const c = cls(score, r.estado);
+    // ── RENDER ───────────────────────────────────────────────────
+    function renderResult(aiRow, editUrl) {
+      const estado = aiRow['Estado']?.value || aiRow['Estado'] || '';
+      const res = aiRow['Resultado']?.value || aiRow['Resultado'] || '';
+      const score = Number(aiRow['Puntuación Total'] || 0);
+      const safety = aiRow['Seguridad Aprobada'];
+      const summary = aiRow['Resumen de IA'] || '';
+      const missing = (aiRow['Evidencia Faltante'] || '').split('\n').filter(Boolean);
+      const c = cls(score, estado);
+
       const icons = { pass: '✅', risk: '⚠️', fail: '❌' };
       const labels = { pass: 'Aprobado', risk: 'En Riesgo', fail: 'Rechazado' };
       const titles = { pass: '¡Instalación validada!', risk: 'Instalación en riesgo', fail: 'Instalación rechazada' };
@@ -702,9 +707,9 @@
       document.getElementById('result-badge').textContent = labels[c];
       document.getElementById('result-badge').className = `result-badge ${c}`;
       document.getElementById('result-title').textContent = titles[c];
-      document.getElementById('result-outcome').textContent = r.resultado || '';
+      document.getElementById('result-outcome').textContent = res;
 
-      if (r.seguridad === false || r.seguridad === 'false')
+      if (safety === false || safety === 'false')
         document.getElementById('safety-banner').style.display = 'flex';
 
       const sNum = document.getElementById('score-num');
@@ -714,15 +719,11 @@
       bar.className = `bar-fill ${c}`;
       setTimeout(() => { bar.style.width = `${(score / 50) * 100}%`; }, 80);
 
-      const sc = r.scores || {};
-      document.getElementById('s-exec').textContent = sc.ejecucion ?? '—';
-      document.getElementById('s-site').textContent = sc.sitio ?? '—';
-      document.getElementById('s-docs').textContent = sc.documentacion ?? '—';
-      document.getElementById('s-edu').textContent = sc.educacion ?? '—';
+      document.getElementById('s-exec').textContent = aiRow['Puntuación: Ejecución'] ?? '—';
+      document.getElementById('s-site').textContent = aiRow['Puntuación: Condición del Sitio'] ?? '—';
+      document.getElementById('s-docs').textContent = aiRow['Puntuación: Documentación'] ?? '—';
+      document.getElementById('s-edu').textContent = aiRow['Puntuación: Educación'] ?? '—';
 
-      const missing = Array.isArray(r.evidencia_faltante)
-        ? r.evidencia_faltante.filter(Boolean)
-        : (r.evidencia_faltante || '').split('\n').filter(Boolean);
       if (missing.length) {
         const list = document.getElementById('missing-list');
         list.innerHTML = '';
@@ -730,11 +731,11 @@
         document.getElementById('missing-section').style.display = 'block';
       }
 
-      document.getElementById('summary-text').textContent = r.resumen || '';
+      document.getElementById('summary-text').textContent = summary;
 
-      if (c !== 'pass' && data.edit_url) {
+      if (c !== 'pass' && editUrl) {
         const btn = document.getElementById('retry-btn');
-        btn.href = data.edit_url;
+        btn.href = editUrl;
         btn.style.display = 'flex';
       }
 
@@ -742,24 +743,58 @@
       if (c === 'pass') confetti();
     }
 
+    // ── POLL BASEROW ─────────────────────────────────────────────
     async function poll() {
-      if (!rowId) { document.getElementById('err-id').textContent = 'Error: falta row_id en la URL.'; showState('state-error'); return; }
+      if (!rowId) {
+        document.getElementById('err-id').textContent = 'Error: falta row_id en la URL.';
+        showState('state-error'); return;
+      }
       try {
-        const res = await fetch(`${N8N_POLL_URL}?row_id=${encodeURIComponent(rowId)}`, { headers: { Accept: 'application/json' } });
-        if (!res.ok) throw new Error(res.status);
-        const data = await res.json();
-        if (data.status === 'complete') { clearInterval(pollTimer); clearInterval(stepTimer); renderResult(data); }
-        else if (Date.now() - startTime > MAX_WAIT) { clearInterval(pollTimer); clearInterval(stepTimer); document.getElementById('err-id').textContent = `ID de pedido: ${rowId}`; showState('state-error'); }
-      } catch (e) { console.warn('Poll:', e.message); }
+        const hdrs = { Authorization: BR_TOKEN, Accept: 'application/json' };
+
+        // 1️⃣ Check Table 814 for the AI result (filter by linked row_id)
+        const r814 = await fetch(
+          `${BASEROW}/table/814/?user_field_names=true&filter__field_8388__link_row_has=${rowId}&size=1`,
+          { headers: hdrs }
+        );
+        const d814 = await r814.json();
+        const aiRow = (d814.results || [])[0];
+
+        // Not saved yet → keep spinning
+        if (!aiRow || !aiRow.id) {
+          if (Date.now() - startTime > MAX_WAIT) {
+            clearInterval(pollTimer); clearInterval(stepTimer);
+            document.getElementById('err-id').textContent = `ID de pedido: ${rowId}`;
+            showState('state-error');
+          }
+          return;
+        }
+
+        // 2️⃣ Fetch edit link from Table 640 (the main order row)
+        let editUrl = null;
+        try {
+          const r640 = await fetch(`${BASEROW}/table/640/${rowId}/?user_field_names=true`, { headers: hdrs });
+          const d640 = await r640.json();
+          editUrl = d640['URL FillOut Instalación'] || null;
+        } catch (_) { /* edit link is optional */ }
+
+        clearInterval(pollTimer); clearInterval(stepTimer);
+        renderResult(aiRow, editUrl);
+
+      } catch (e) { console.warn('Poll error:', e.message); }
     }
 
+    // ── INIT ─────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-      if (!rowId) { document.getElementById('err-id').textContent = 'No se encontró el ID del pedido.'; showState('state-error'); return; }
+      if (!rowId) {
+        document.getElementById('err-id').textContent = 'No se encontró el ID del pedido.';
+        showState('state-error'); return;
+      }
       showState('state-loading');
       advanceStep();
       stepTimer = setInterval(advanceStep, 7000);
       poll();
-      pollTimer = setInterval(poll, POLL_INTERVAL);
+      pollTimer = setInterval(poll, POLL_MS);
     });
 
     /* ── CONFETTI ── */
