@@ -511,7 +511,7 @@ function VerificationInner() {
     if (isDemo) {
       const demoRow = demoMode === "fail" ? DEMO_FAIL : DEMO_PASS;
       const t = setTimeout(() => {
-        clearInterval(msgRef.current!);
+        clearInterval(tickRef.current!);
         setResultRow(demoRow);
         setTimeout(() => {
           setAppState("result");
