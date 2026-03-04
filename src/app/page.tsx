@@ -511,15 +511,10 @@ function VerificationInner() {
           clearInterval(tickRef.current!);
         setResultRow(data.row);
         setEditUrl(editUrlParam ?? data.editUrl ?? null);
-        setTimeout(() => {
-          setAppState("result");
-          setTimeout(() => setBarReady(true), 100);
-          const estado = typeof data.row.Estado === "object" ? data.row.Estado?.value : data.row.Estado ?? "";
-          const score = Number(data.row["Puntuación Total"] ?? 0);
-          if (gradeOf(score, estado) === "pass" && canvasRef.current) {
-            setTimeout(() => runConfetti(canvasRef.current!), 600);
-          }
-        }, 600);
+          setTimeout(() => {
+            setAppState("result");
+            setTimeout(() => setBarReady(true), 100);
+          }, 600);
       } catch (e) {
         console.warn("poll error:", e);
       }
