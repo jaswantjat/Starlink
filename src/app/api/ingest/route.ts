@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   // Map incoming fields → Baserow field IDs (table 814)
   const baserowPayload: Record<string, unknown> = {
-    field_8388: [{ id: Number(rowId) }], // link to table 640 row
+    field_8388: [Number(rowId)], // link to table 640 row requires an array of integers
     field_8376: body.estado ?? '',
     field_8378: body.total_score ?? 0,
     field_8379: body.safety_passed ?? false,
