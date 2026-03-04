@@ -521,7 +521,7 @@ function VerificationInner() {
           }
         }, 400);
       }, 3200);
-      return () => { clearTimeout(t); clearInterval(msgRef.current!); };
+      return () => { clearTimeout(t); clearInterval(tickRef.current!); };
     }
 
     async function poll() {
