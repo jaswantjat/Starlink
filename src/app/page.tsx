@@ -476,13 +476,16 @@ function VerificationInner() {
     msgRef.current = setInterval(() => setMsgIdx((i) => i + 1), 2800);
 
     if (isDemo) {
+      const demoRow = demoMode === "fail" ? DEMO_FAIL : DEMO_PASS;
       const t = setTimeout(() => {
         clearInterval(msgRef.current!);
-        setResultRow(DEMO_ROW);
+        setResultRow(demoRow);
         setTimeout(() => {
           setAppState("result");
           setTimeout(() => setBarReady(true), 100);
-          setTimeout(() => { if (canvasRef.current) runConfetti(canvasRef.current); }, 600);
+          if (demoMode !== "fail") {
+            setTimeout(() => { if (canvasRef.current) runConfetti(canvasRef.current); }, 600);
+          }
         }, 400);
       }, 3200);
       return () => { clearTimeout(t); clearInterval(msgRef.current!); };
