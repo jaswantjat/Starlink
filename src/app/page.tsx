@@ -168,6 +168,44 @@ function LoadingView({ msgIdx }: { msgIdx: number }) {
   );
 }
 
+/* ─── fix steps for fail / risk ─────────────────────────── */
+function buildFixSteps(
+  g: Grade,
+  safetyFail: boolean,
+  missing: string[],
+  subScores: { label: string; val: number; max: number }[]
+): string[] {
+  const steps: string[] = [];
+
+  if (safetyFail) {
+    steps.push("Corrige el problema de seguridad detectado antes de continuar.");
+  }
+
+  if (missing.length > 0) {
+    missing.forEach((m) => steps.push(`Sube la foto faltante: ${m}`));
+  }
+
+  subScores.forEach(({ label, val, max }) => {
+    const pct = val / max;
+    if (pct < 0.6) {
+      const hints: Record<string, string> = {
+        Ejecución: "Revisa el montaje del plato y el ángulo de orientación.",
+        Sitio: "Documenta las condiciones del sitio con fotos claras.",
+        Documentación: "Añade fotos de cada etapa: plato, cableado y router.",
+        Formación: "Registra la demostración de uso al cliente con evidencia.",
+      };
+      if (hints[label]) steps.push(hints[label]);
+    }
+  });
+
+  if (g === "risk" && steps.length === 0) {
+    steps.push("Completa la documentación fotográfica de la instalación.");
+    steps.push("Asegúrate de que todas las secciones superen el 60 % de puntuación.");
+  }
+
+  return steps;
+}
+
 /* ─── result view ───────────────────────────────────────── */
 function ResultView({
   row,
@@ -183,23 +221,31 @@ function ResultView({
   const estado = str(row.Estado);
   const score = Number(row["Puntuación Total"] ?? 0);
   const safety = row["Seguridad Aprobada"];
-  const summary = row["Resumen de IA"] ?? "";
   const missing = (row["Evidencia Faltante"] ?? "").split("\n").filter(Boolean);
   const g = gradeOf(score, estado);
   const t = THEME[g];
   const safetyFail = safety === false || safety === "false";
 
+  const subScores = [
+    { label: "Ejecución",     val: Number(row["Puntuación: Ejecución"] ?? 0),           max: 15 },
+    { label: "Sitio",         val: Number(row["Puntuación: Condición del Sitio"] ?? 0), max: 10 },
+    { label: "Documentación", val: Number(row["Puntuación: Documentación"] ?? 0),       max: 15 },
+    { label: "Formación",     val: Number(row["Puntuación: Educación"] ?? 0),           max: 10 },
+  ];
+
+  const fixSteps = g !== "pass" ? buildFixSteps(g, safetyFail, missing, subScores) : [];
+
   const GradeIcon =
     g === "pass" ? (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
       </svg>
     ) : g === "risk" ? (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
     ) : (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
       </svg>
     );
@@ -207,15 +253,15 @@ function ResultView({
   return (
     <motion.div
       key="result"
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="flex flex-col gap-4"
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="flex flex-col gap-4 pb-4"
     >
       {/* Demo badge */}
       {isDemo && (
         <div className="flex justify-center">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-white/25 font-mono">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-white/20 font-mono">
             — datos de ejemplo —
           </span>
         </div>
@@ -224,15 +270,14 @@ function ResultView({
       {/* Hero */}
       <div className="flex flex-col items-center gap-3 py-2">
         <motion.div
-          initial={{ scale: 0.6, opacity: 0 }}
+          initial={{ scale: 0.7, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.05 }}
-          className="w-20 h-20 rounded-full flex items-center justify-center border"
+          transition={{ type: "spring", stiffness: 280, damping: 22, delay: 0.05 }}
+          className="w-16 h-16 rounded-full flex items-center justify-center border"
           style={{
-            borderColor: `${t.color}30`,
-            backgroundColor: `${t.color}0d`,
+            borderColor: `${t.color}25`,
+            backgroundColor: `${t.color}0a`,
             color: t.color,
-            boxShadow: `0 0 40px ${t.ringColor}`,
           }}
         >
           {GradeIcon}
@@ -241,8 +286,8 @@ function ResultView({
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className={`text-[10px] font-semibold tracking-[0.2em] uppercase px-4 py-1.5 rounded-full border ${t.badgeBg} ${t.textClass}`}
+          transition={{ delay: 0.12 }}
+          className={`text-[10px] font-semibold tracking-[0.2em] uppercase px-3 py-1 rounded-full border ${t.badgeBg} ${t.textClass}`}
         >
           {t.label}
         </motion.span>
@@ -250,36 +295,22 @@ function ResultView({
         <motion.h1
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-2xl font-semibold text-white text-center tracking-tight"
+          transition={{ delay: 0.18 }}
+          className="text-xl font-semibold text-white text-center tracking-tight"
         >
           {t.title}
         </motion.h1>
       </div>
 
-      {/* Safety banner */}
-      {safetyFail && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="border border-red-500/20 bg-red-500/6 rounded-2xl p-4 text-sm text-red-200/70 leading-relaxed"
-        >
-          <strong className="text-red-400 block mb-1 text-xs uppercase tracking-wider">Problema de seguridad</strong>
-          Debe subsanarse antes de la aprobación final.
-        </motion.div>
-      )}
-
       {/* Score card */}
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
+        transition={{ delay: 0.22 }}
         className="rounded-2xl border border-white/8 bg-white/[0.03] p-5"
       >
-        {/* Score header */}
-        <div className="flex items-end justify-between mb-4">
-          <span className="text-xs text-white/35 uppercase tracking-wider">Puntuación total</span>
+        <div className="flex items-end justify-between mb-3">
+          <span className="text-xs text-white/30 uppercase tracking-wider">Puntuación total</span>
           <div className="flex items-baseline gap-1">
             <span className={`text-4xl font-light tabular-nums ${t.textClass}`}>
               <AnimatedScore value={score} />
@@ -288,71 +319,54 @@ function ResultView({
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="h-1.5 bg-white/6 rounded-full overflow-hidden mb-5">
+        <div className="h-1 bg-white/6 rounded-full overflow-hidden mb-4">
           <div
             className={`h-full rounded-full bg-gradient-to-r transition-all duration-[1400ms] ease-out ${t.barClass}`}
             style={{ width: barReady ? `${(score / 50) * 100}%` : "0%" }}
           />
         </div>
 
-        {/* Sub scores */}
         <div className="grid grid-cols-2 gap-2">
-          {([
-            ["Ejecución", "/ 15", row["Puntuación: Ejecución"]],
-            ["Sitio", "/ 10", row["Puntuación: Condición del Sitio"]],
-            ["Documentación", "/ 15", row["Puntuación: Documentación"]],
-            ["Formación", "/ 10", row["Puntuación: Educación"]],
-          ] as [string, string, string | number | undefined][]).map(([label, max, val], i) => (
+          {subScores.map(({ label, val, max }, i) => (
             <motion.div
               key={label}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 + i * 0.06 }}
+              transition={{ delay: 0.3 + i * 0.05 }}
               className="bg-white/[0.025] rounded-xl p-3 border border-white/[0.04]"
             >
-              <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
-                {label}
-              </div>
+              <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{label}</div>
               <div className="flex items-baseline gap-1">
-                <span className={`text-lg font-medium ${t.textClass}`}>{val ?? "—"}</span>
-                <span className="text-xs text-white/20">{max}</span>
+                <span className={`text-lg font-medium ${t.textClass}`}>{val}</span>
+                <span className="text-xs text-white/20">/ {max}</span>
               </div>
             </motion.div>
           ))}
         </div>
       </motion.div>
 
-      {/* Missing evidence */}
-      {missing.length > 0 && (
+      {/* Fix steps — only shown when not passing */}
+      {fixSteps.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="rounded-2xl border border-red-500/15 bg-red-500/4 p-5"
+          transition={{ delay: 0.45 }}
+          className="rounded-2xl border border-white/8 bg-white/[0.025] p-5"
         >
-          <div className="text-xs text-red-400/80 uppercase tracking-wider mb-3">Evidencia faltante</div>
-          <ul className="flex flex-col gap-2">
-            {missing.map((m, i) => (
-              <li key={i} className="text-sm text-white/45 flex gap-2 leading-relaxed">
-                <span className="text-red-500/40 shrink-0 mt-0.5">·</span>
-                {m}
+          <div className="text-xs text-white/30 uppercase tracking-wider mb-3">Pasos para aprobar</div>
+          <ol className="flex flex-col gap-3">
+            {fixSteps.map((step, i) => (
+              <li key={i} className="flex gap-3 items-start">
+                <span
+                  className="shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-semibold mt-0.5"
+                  style={{ borderColor: `${t.color}30`, color: t.color }}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-sm text-white/55 leading-relaxed">{step}</span>
               </li>
             ))}
-          </ul>
-        </motion.div>
-      )}
-
-      {/* AI summary */}
-      {summary && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.55 }}
-          className="rounded-2xl border border-white/6 bg-white/[0.02] p-5"
-        >
-          <div className="text-xs text-white/25 uppercase tracking-wider mb-3">Análisis IA</div>
-          <p className="text-sm text-white/50 leading-[1.75]">{summary}</p>
+          </ol>
         </motion.div>
       )}
 
@@ -361,7 +375,7 @@ function ResultView({
         <motion.a
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.65 }}
+          transition={{ delay: 0.55 }}
           href={editUrl}
           className="flex items-center justify-center gap-2 w-full py-3.5 bg-white text-black text-sm font-semibold rounded-2xl no-underline active:scale-[0.98] transition-transform"
         >
