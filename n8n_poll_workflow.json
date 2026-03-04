@@ -1,0 +1,226 @@
+{
+    "name": "poll-ai-result",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "GET",
+                "path": "poll-ai-result",
+                "responseMode": "lastNode",
+                "options": {
+                    "allowedOrigins": "*"
+                }
+            },
+            "id": "a1b2c3d4-0001-0001-0001-000000000001",
+            "name": "GET /poll-ai-result",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                -900,
+                0
+            ],
+            "webhookId": "poll-ai-result-prod-v1"
+        },
+        {
+            "parameters": {
+                "jsCode": "const rowId = $json.query?.row_id;\nif (!rowId) {\n  throw new Error('Missing row_id parameter');\n}\nreturn [{ json: { row_id: String(rowId) } }];"
+            },
+            "id": "a1b2c3d4-0001-0001-0001-000000000002",
+            "name": "Extract row_id",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -660,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://baserow-production-1daf.up.railway.app/api/database/rows/table/814/?user_field_names=true&filter__field_8388__link_row_has={{ $json.row_id }}&size=1",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Token ygblMAbPhFxJA2cixOi25nlGmj5DBLYQ"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "a1b2c3d4-0001-0001-0001-000000000003",
+            "name": "Fetch AI Result (Table 814)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.3,
+            "position": [
+                -420,
+                -120
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://baserow-production-1daf.up.railway.app/api/database/rows/table/640/{{ $('Extract row_id').first().json.row_id }}/?user_field_names=true",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Token ygblMAbPhFxJA2cixOi25nlGmj5DBLYQ"
+                        }
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "neverError": true
+                        }
+                    }
+                }
+            },
+            "id": "a1b2c3d4-0001-0001-0001-000000000004",
+            "name": "Fetch Edit URL (Table 640)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.3,
+            "position": [
+                -420,
+                120
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combineBy": "combineByPosition",
+                "numberInputs": 2,
+                "options": {}
+            },
+            "id": "a1b2c3d4-0001-0001-0001-000000000005",
+            "name": "Merge Results",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3.2,
+            "position": [
+                -160,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const aiData   = $input.first().json;\nconst mainData = $input.last().json;\n\nconst aiRows = aiData.results || [];\nconst editUrl = mainData['URL FillOut Instalación'] || null;\n\n// No AI row yet → pending\nif (aiRows.length === 0 || !aiRows[0].id) {\n  return [{\n    json: {\n      status: 'pending',\n      message: 'Analizando tu formulario...'\n    }\n  }];\n}\n\nconst r = aiRows[0];\nconst estado      = r['Estado']?.value  || r['Estado']  || '';\nconst resultado   = r['Resultado']?.value || r['Resultado'] || '';\nconst score       = Number(r['Puntuación Total'] || 0);\nconst safety      = r['Seguridad Aprobada'];\nconst missing     = r['Evidencia Faltante'] || '';\nconst summary     = r['Resumen de IA'] || '';\nconst execScore   = Number(r['Puntuación: Ejecución'] || 0);\nconst siteScore   = Number(r['Puntuación: Condición del Sitio'] || 0);\nconst docsScore   = Number(r['Puntuación: Documentación'] || 0);\nconst eduScore    = Number(r['Puntuación: Educación'] || 0);\n\nreturn [{\n  json: {\n    status: 'complete',\n    edit_url: editUrl,\n    result: {\n      estado,\n      resultado,\n      puntuacion_total: score,\n      seguridad: safety,\n      resumen: summary,\n      evidencia_faltante: missing,\n      scores: {\n        ejecucion: execScore,\n        sitio: siteScore,\n        documentacion: docsScore,\n        educacion: eduScore\n      }\n    }\n  }\n}];"
+            },
+            "id": "a1b2c3d4-0001-0001-0001-000000000006",
+            "name": "Build Response JSON",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                80,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "allIncomingItems",
+                "options": {
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "Access-Control-Allow-Origin",
+                                "value": "*"
+                            },
+                            {
+                                "name": "Access-Control-Allow-Methods",
+                                "value": "GET, OPTIONS"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "a1b2c3d4-0001-0001-0001-000000000007",
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.4,
+            "position": [
+                320,
+                0
+            ]
+        }
+    ],
+    "connections": {
+        "GET /poll-ai-result": {
+            "main": [
+                [
+                    {
+                        "node": "Extract row_id",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract row_id": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch AI Result (Table 814)",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Edit URL (Table 640)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch AI Result (Table 814)": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Edit URL (Table 640)": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Results",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Merge Results": {
+            "main": [
+                [
+                    {
+                        "node": "Build Response JSON",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build Response JSON": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1",
+        "saveManualExecutions": false
+    }
+}

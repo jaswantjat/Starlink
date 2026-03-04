@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Resultado de Instalación — Starlink × Eltex</title>
+  <meta name="description" content="Resultado de validación de tu formulario de instalación Starlink." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+    :root {
+      --c-bg:        #0a0f1c;
+      --c-surface:   #111827;
+      --c-surface2:  #1a2234;
+      --c-border:    #1f2d47;
+      --c-text:      #e2e8f0;
+      --c-muted:     #64748b;
+      --c-brand:     #3b82f6;
+      --c-brand-glow:#1d4ed880;
+      --c-green:     #22c55e;
+      --c-green-bg:  #052e16;
+      --c-green-bdr: #166534;
+      --c-red:       #ef4444;
+      --c-red-bg:    #2d0a0a;
+      --c-red-bdr:   #7f1d1d;
+      --c-amber:     #f59e0b;
+      --c-amber-bg:  #2d1a00;
+      --c-amber-bdr: #78350f;
+      --radius:      16px;
+      --radius-sm:   10px;
+    }
+
+    /* ============================================================
+       RESET / BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--c-bg);
+      color: var(--c-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 16px 40px;
+    }
+
+    /* ============================================================
+       LOGO / HEADER
+    ============================================================ */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+    .logo-star {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--c-brand), #8b5cf6);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--c-text);
+      line-height: 1.3;
+    }
+    .logo-text span {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--c-muted);
+    }
+
+    /* ============================================================
+       CARD
+    ============================================================ */
+    .card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* ============================================================
+       LOADING STATE
+    ============================================================ */
+    #state-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 20px 0;
+    }
+    .spinner-ring {
+      width: 72px;
+      height: 72px;
+      border: 5px solid var(--c-border);
+      border-top-color: var(--c-brand);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-title {
+      font-size: 19px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .loading-sub {
+      font-size: 14px;
+      color: var(--c-muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+    .loading-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--c-surface2);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--c-muted);
+      transition: color 0.4s, border-color 0.4s;
+    }
+    .step.active {
+      color: var(--c-text);
+      border-color: var(--c-brand);
+    }
+    .step-icon { font-size: 18px; flex-shrink: 0; }
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--c-border);
+      flex-shrink: 0;
+      transition: background 0.4s;
+    }
+    .step.active .step-dot { background: var(--c-brand); animation: pulse 1s ease-in-out infinite; }
+    .step.done .step-dot  { background: var(--c-green); animation: none; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ============================================================
+       RESULT STATE
+    ============================================================ */
+    #state-result { display: none; flex-direction: column; gap: 20px; }
+
+    .result-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0 4px;
+    }
+    .result-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+    }
+    .result-icon.pass { background: var(--c-green-bg); box-shadow: 0 0 30px #22c55e40; }
+    .result-icon.fail { background: var(--c-red-bg);   box-shadow: 0 0 30px #ef444440; }
+    .result-icon.risk { background: var(--c-amber-bg); box-shadow: 0 0 30px #f59e0b40; }
+
+    .result-badge {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+    .result-badge.pass { background: var(--c-green-bg);  color: var(--c-green); border: 1px solid var(--c-green-bdr); }
+    .result-badge.fail { background: var(--c-red-bg);    color: var(--c-red);   border: 1px solid var(--c-red-bdr);  }
+    .result-badge.risk { background: var(--c-amber-bg);  color: var(--c-amber); border: 1px solid var(--c-amber-bdr);}
+
+    .result-title {
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+    }
+    .result-outcome {
+      font-size: 14px;
+      color: var(--c-muted);
+      text-align: center;
+    }
+
+    /* Score bar */
+    .score-section {
+      background: var(--c-surface2);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+    .score-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+    .score-label { font-size: 13px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .score-number { font-size: 28px; font-weight: 800; }
+    .score-number.pass { color: var(--c-green); }
+    .score-number.fail { color: var(--c-red);   }
+    .score-number.risk { color: var(--c-amber);  }
+    .score-bar-bg {
+      height: 10px;
+      border-radius: 10px;
+      background: var(--c-border);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 1s ease;
+    }
+    .score-bar-fill.pass { background: linear-gradient(90deg, #16a34a, var(--c-green)); }
+    .score-bar-fill.fail { background: linear-gradient(90deg, #b91c1c, var(--c-red));   }
+    .score-bar-fill.risk { background: linear-gradient(90deg, #b45309, var(--c-amber)); }
+
+    .sub-scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .sub-score {
+      background: var(--c-bg);
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .sub-score-label { font-size: 11px; color: var(--c-muted); margin-bottom: 4px; }
+    .sub-score-val   { font-size: 16px; font-weight: 700; }
+
+    /* Summary */
+    .summary-section {
+      background: var(--c-surface2);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+    .summary-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--c-muted);
+      margin-bottom: 10px;
+    }
+    .summary-text {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--c-text);
+      white-space: pre-line;
+    }
+
+    /* Missing evidence */
+    .missing-section {
+      background: var(--c-red-bg);
+      border: 1px solid var(--c-red-bdr);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+    .missing-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--c-red);
+      margin-bottom: 10px;
+    }
+    .missing-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .missing-list li {
+      font-size: 13px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      color: #fca5a5;
+    }
+    .missing-list li::before { content: "•"; color: var(--c-red); flex-shrink: 0; margin-top: 1px; }
+
+    /* Retry button */
+    .retry-btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--c-brand), #6366f1);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 4px 20px var(--c-brand-glow);
+    }
+    .retry-btn:active { transform: scale(0.98); opacity: 0.85; }
+
+    /* Safety failed banner */
+    .safety-banner {
+      background: var(--c-red-bg);
+      border: 1px solid var(--c-red-bdr);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #fca5a5;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* ============================================================
+       ERROR STATE
+    ============================================================ */
+    #state-error {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 0;
+      text-align: center;
+    }
+    .error-icon { font-size: 52px; }
+    .error-title { font-size: 19px; font-weight: 700; }
+    .error-sub   { font-size: 14px; color: var(--c-muted); line-height: 1.6; }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--c-muted);
+      text-align: center;
+    }
+
+    /* ============================================================
+       CONFETTI canvas (pass only)
+    ============================================================ */
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas" style="display:none;"></canvas>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-star">📡</div>
+  <div class="logo-text">
+    Starlink × Eltex
+    <span>Verificación de Instalación</span>
+  </div>
+</div>
+
+<!-- MAIN CARD -->
+<div class="card">
+
+  <!-- === LOADING STATE === -->
+  <div id="state-loading">
+    <div class="spinner-ring"></div>
+    <div class="loading-title">Analizando tu instalación</div>
+    <div class="loading-sub">Nuestra IA está revisando las fotos de tu formulario.<br/>Esto tarda entre 10 y 30 segundos.</div>
+
+    <div class="loading-steps">
+      <div class="step active" id="step-1">
+        <span class="step-icon">📥</span>
+        <span>Descargando formulario PDF</span>
+        <span class="step-dot" style="margin-left:auto;"></span>
+      </div>
+      <div class="step" id="step-2">
+        <span class="step-icon">🖼️</span>
+        <span>Convirtiendo imágenes</span>
+        <span class="step-dot" style="margin-left:auto;"></span>
+      </div>
+      <div class="step" id="step-3">
+        <span class="step-icon">🤖</span>
+        <span>Revisando con IA (Gemini)</span>
+        <span class="step-dot" style="margin-left:auto;"></span>
+      </div>
+      <div class="step" id="step-4">
+        <span class="step-icon">✅</span>
+        <span>Guardando resultado</span>
+        <span class="step-dot" style="margin-left:auto;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- === RESULT STATE === -->
+  <div id="state-result">
+    <div class="result-hero" id="result-hero">
+      <div class="result-icon" id="result-icon"></div>
+      <div class="result-badge" id="result-badge"></div>
+      <div class="result-title" id="result-title"></div>
+      <div class="result-outcome" id="result-outcome"></div>
+    </div>
+
+    <!-- Safety banner (only shown if safety failed) -->
+    <div class="safety-banner" id="safety-banner" style="display:none;">
+      ⚠️ <strong>Riesgo de seguridad detectado.</strong>&nbsp; Esta instalación no puede aprobarse hasta que se corrija.
+    </div>
+
+    <!-- Score -->
+    <div class="score-section">
+      <div class="score-header">
+        <span class="score-label">Puntuación Total</span>
+        <span class="score-number" id="score-number"></span>
+      </div>
+      <div class="score-bar-bg">
+        <div class="score-bar-fill" id="score-bar" style="width:0%;"></div>
+      </div>
+      <div class="sub-scores">
+        <div class="sub-score">
+          <div class="sub-score-label">Ejecución (/ 15)</div>
+          <div class="sub-score-val" id="s-exec">—</div>
+        </div>
+        <div class="sub-score">
+          <div class="sub-score-label">Estado del sitio (/ 10)</div>
+          <div class="sub-score-val" id="s-site">—</div>
+        </div>
+        <div class="sub-score">
+          <div class="sub-score-label">Documentación (/ 15)</div>
+          <div class="sub-score-val" id="s-docs">—</div>
+        </div>
+        <div class="sub-score">
+          <div class="sub-score-label">Educación cliente (/ 10)</div>
+          <div class="sub-score-val" id="s-edu">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Missing evidence list -->
+    <div class="missing-section" id="missing-section" style="display:none;">
+      <div class="missing-title">⚠️ Evidencia faltante</div>
+      <ul class="missing-list" id="missing-list"></ul>
+    </div>
+
+    <!-- AI Summary -->
+    <div class="summary-section">
+      <div class="summary-title">📋 Resumen de la IA</div>
+      <div class="summary-text" id="summary-text"></div>
+    </div>
+
+    <!-- Retry button (only shown on fail) -->
+    <a class="retry-btn" id="retry-btn" style="display:none;" href="#">
+      🔄 Corregir y Reenviar
+    </a>
+  </div>
+
+  <!-- === ERROR STATE === -->
+  <div id="state-error">
+    <div class="error-icon">⏱️</div>
+    <div class="error-title">Tiempo de espera agotado</div>
+    <div class="error-sub">
+      El análisis está tardando más de lo esperado.<br/>
+      Por favor, contacta con el equipo técnico de Eltex e indica tu pedido.
+    </div>
+    <div id="error-order" style="font-size:14px; color: var(--c-muted);"></div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Starlink × Eltex · Sistema Automatizado de QA
+</div>
+
+<!-- ================================================================
+     JAVASCRIPT — POLLING LOGIC
+================================================================ -->
+<script>
+  // ---------------------------------------------------------------
+  // CONFIG — UPDATE THIS TO YOUR N8N ENDPOINT
+  // ---------------------------------------------------------------
+  const N8N_POLL_URL = 'https://primary-production-903a.up.railway.app/webhook/poll-ai-result';
+  const POLL_INTERVAL_MS = 3000;
+  const MAX_WAIT_MS      = 90000; // 90 seconds before showing error
+
+  // ---------------------------------------------------------------
+  // READ URL PARAMS
+  // ---------------------------------------------------------------
+  const params   = new URLSearchParams(window.location.search);
+  const rowId    = params.get('row_id');
+  const custName = params.get('name') || 'Técnico';
+
+  // ---------------------------------------------------------------
+  // HELPERS
+  // ---------------------------------------------------------------
+  let pollTimer   = null;
+  let stepTimer   = null;
+  let startTime   = Date.now();
+  let stepIndex   = 0;
+  const steps     = ['step-1','step-2','step-3','step-4'];
+
+  function advanceStep() {
+    if (stepIndex < steps.length) {
+      const prev = steps[stepIndex - 1];
+      if (prev) {
+        document.getElementById(prev).classList.remove('active');
+        document.getElementById(prev).classList.add('done');
+        document.getElementById(prev).querySelector('.step-dot').style.background = 'var(--c-green)';
+      }
+      document.getElementById(steps[stepIndex]).classList.add('active');
+      stepIndex++;
+    }
+  }
+
+  function getScoreClass(score) {
+    if (score >= 45) return 'pass';
+    if (score >= 35) return 'risk';
+    return 'fail';
+  }
+
+  function showState(id) {
+    ['state-loading','state-result','state-error'].forEach(s => {
+      const el = document.getElementById(s);
+      el.style.display = (s === id) ? 'flex' : 'none';
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // RENDER RESULT
+  // ---------------------------------------------------------------
+  function renderResult(data) {
+    const r       = data.result;
+    const score   = Number(r.puntuacion_total) || 0;
+    const estado  = (r.estado || '').toUpperCase();
+    const cls     = estado === 'APROBADO' ? (score >= 45 ? 'pass' : 'risk') : 'fail';
+
+    // Hero
+    const icons   = { pass: '✅', risk: '⚠️', fail: '❌' };
+    const labels  = { pass: 'Aprobado', risk: 'En Riesgo', fail: 'Rechazado' };
+    const titles  = { pass: '¡Instalación validada!', risk: 'Instalación en riesgo', fail: 'Instalación rechazada' };
+
+    document.getElementById('result-icon').textContent = icons[cls];
+    document.getElementById('result-icon').className   = `result-icon ${cls}`;
+    document.getElementById('result-badge').textContent = labels[cls];
+    document.getElementById('result-badge').className   = `result-badge ${cls}`;
+    document.getElementById('result-title').textContent = titles[cls];
+    document.getElementById('result-outcome').textContent = r.resultado || '';
+
+    // Safety banner
+    if (r.seguridad === false || r.seguridad === 'false') {
+      document.getElementById('safety-banner').style.display = 'flex';
+    }
+
+    // Score
+    document.getElementById('score-number').textContent = `${score} / 50`;
+    document.getElementById('score-number').className   = `score-number ${cls}`;
+    document.getElementById('score-bar').className      = `score-bar-fill ${cls}`;
+    // Animate bar width after small delay
+    setTimeout(() => {
+      document.getElementById('score-bar').style.width = `${(score / 50) * 100}%`;
+    }, 100);
+
+    // Sub-scores
+    const sc = r.scores || {};
+    document.getElementById('s-exec').textContent = sc.ejecucion ?? '—';
+    document.getElementById('s-site').textContent = sc.sitio     ?? '—';
+    document.getElementById('s-docs').textContent = sc.documentacion ?? '—';
+    document.getElementById('s-edu').textContent  = sc.educacion ?? '—';
+
+    // Missing evidence
+    const missing = Array.isArray(r.evidencia_faltante)
+      ? r.evidencia_faltante.filter(Boolean)
+      : (r.evidencia_faltante || '').split('\n').filter(Boolean);
+
+    if (missing.length > 0) {
+      const sec  = document.getElementById('missing-section');
+      const list = document.getElementById('missing-list');
+      list.innerHTML = '';
+      missing.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.appendChild(li);
+      });
+      sec.style.display = 'block';
+    }
+
+    // Summary
+    document.getElementById('summary-text').textContent = r.resumen || '';
+
+    // Retry button (show only when failed/risk)
+    if (cls !== 'pass' && data.edit_url) {
+      const btn = document.getElementById('retry-btn');
+      btn.href  = data.edit_url;
+      btn.style.display = 'block';
+    }
+
+    showState('state-result');
+
+    // Confetti on pass
+    if (cls === 'pass') launchConfetti();
+  }
+
+  // ---------------------------------------------------------------
+  // POLL LOOP
+  // ---------------------------------------------------------------
+  async function poll() {
+    if (!rowId) {
+      showState('state-error');
+      document.getElementById('error-order').textContent = 'Error: falta el parámetro row_id en la URL.';
+      return;
+    }
+
+    try {
+      const url = `${N8N_POLL_URL}?row_id=${encodeURIComponent(rowId)}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (data.status === 'complete') {
+        clearInterval(pollTimer);
+        clearInterval(stepTimer);
+        renderResult(data);
+        return;
+      }
+      // Still pending — check timeout
+      if (Date.now() - startTime > MAX_WAIT_MS) {
+        clearInterval(pollTimer);
+        clearInterval(stepTimer);
+        document.getElementById('error-order').textContent = `ID de pedido: ${rowId}`;
+        showState('state-error');
+      }
+    } catch (err) {
+      console.warn('Poll error:', err.message);
+      // Keep retrying silently on network errors
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // INIT
+  // ---------------------------------------------------------------
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!rowId) {
+      showState('state-error');
+      document.getElementById('error-order').textContent =
+        'No se encontró el ID del pedido en la URL. Por favor, vuelve al formulario.';
+      return;
+    }
+
+    showState('state-loading');
+
+    // Animate step indicators every ~7s to simulate progress
+    advanceStep(); // step 1 active immediately
+    stepTimer = setInterval(() => advanceStep(), 7000);
+
+    // Start polling
+    poll(); // fire immediately
+    pollTimer = setInterval(poll, POLL_INTERVAL_MS);
+  });
+
+  // ---------------------------------------------------------------
+  // CONFETTI (lightweight, no library)
+  // ---------------------------------------------------------------
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    canvas.style.display = 'block';
+    const ctx    = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = Array.from({length: 80}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      r: Math.random() * 6 + 3,
+      d: Math.random() * 2 + 1,
+      color: ['#22c55e','#3b82f6','#f59e0b','#8b5cf6','#ec4899'][Math.floor(Math.random()*5)],
+      angle: Math.random() * 360,
+      spin: (Math.random() - 0.5) * 5
+    }));
+
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.angle * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r * 2);
+        ctx.restore();
+        p.y += p.d;
+        p.angle += p.spin;
+        if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+      });
+      frame++;
+      if (frame < 150) requestAnimationFrame(draw);
+      else { ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.style.display = 'none'; }
+    }
+    draw();
+  }
+</script>
+</body>
+</html>
