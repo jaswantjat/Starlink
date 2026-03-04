@@ -556,7 +556,7 @@ function VerificationInner() {
 
     poll();
     pollRef.current = setInterval(poll, 3000);
-    return () => { clearInterval(pollRef.current!); clearInterval(msgRef.current!); };
+      return () => { clearInterval(pollRef.current!); clearInterval(tickRef.current!); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
