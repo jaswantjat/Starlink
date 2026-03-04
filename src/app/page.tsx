@@ -29,6 +29,7 @@ interface VerificationRow {
   "Puntuación: Condición del Sitio"?: string | number;
   "Puntuación: Documentación"?: string | number;
   "Puntuación: Educación"?: string | number;
+  "Resumen IA"?: string;
 }
 
 /* ─── demo data ─────────────────────────────────────────── */
