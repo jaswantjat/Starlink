@@ -457,6 +457,7 @@ function VerificationInner() {
   const params = useSearchParams();
   const rowId = params.get("row_id") ?? "";
   const editUrlParam = params.get("edit_url") ?? null;
+  const demoMode = params.get("demo") ?? "pass"; // "pass" | "fail"
   const isDemo = !rowId;
 
   type AppState = "loading" | "result" | "error";
