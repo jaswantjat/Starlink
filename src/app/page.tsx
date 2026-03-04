@@ -456,40 +456,7 @@ function ErrorView({ rowId }: { rowId: string }) {
   );
 }
 
-/* ─── confetti ──────────────────────────────────────────── */
-function runConfetti(canvas: HTMLCanvasElement) {
-  canvas.style.display = "block";
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const ctx = canvas.getContext("2d")!;
-  const colors = ["#4ade80", "#60a5fa", "#f59e0b", "#a78bfa", "#fff"];
-  const bits = Array.from({ length: 100 }, () => ({
-    x: Math.random() * canvas.width,
-    y: -20 - Math.random() * 200,
-    r: Math.random() * 5 + 2,
-    d: Math.random() * 2.5 + 1,
-    c: colors[Math.floor(Math.random() * colors.length)],
-    a: Math.random() * 360,
-    s: (Math.random() - 0.5) * 6,
-  }));
-  let f = 0;
-  (function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    bits.forEach((b) => {
-      ctx.save();
-      ctx.translate(b.x, b.y);
-      ctx.rotate((b.a * Math.PI) / 180);
-      ctx.globalAlpha = Math.max(0, 1 - f / 160);
-      ctx.fillStyle = b.c;
-      ctx.fillRect(-b.r / 2, -b.r / 2, b.r, b.r * 2);
-      ctx.restore();
-      b.y += b.d;
-      b.a += b.s;
-    });
-    if (++f < 200) requestAnimationFrame(draw);
-    else { ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.style.display = "none"; }
-  })();
-}
+
 
 /* ─── main ──────────────────────────────────────────────── */
 function VerificationInner() {
