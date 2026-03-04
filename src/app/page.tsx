@@ -24,7 +24,6 @@ type Grade = "pass" | "risk" | "fail";
 
 interface VerificationRow {
   Estado?: { value: string } | string;
-  Resultado?: { value: string } | string;
   "Puntuación Total"?: string | number;
   "Seguridad Aprobada"?: boolean | string;
   "Evidencia Faltante"?: string;
@@ -32,7 +31,6 @@ interface VerificationRow {
   "Puntuación: Condición del Sitio"?: string | number;
   "Puntuación: Documentación"?: string | number;
   "Puntuación: Educación"?: string | number;
-  "Resumen de IA"?: string;
 }
 
 /* ─── demo data ─────────────────────────────────────────── */
