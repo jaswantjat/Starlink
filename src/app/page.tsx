@@ -83,12 +83,15 @@ function AnimatedScore({ value }: { value: number }) {
 }
 
 /* ─── loading messages ──────────────────────────────────── */
-const MESSAGES = [
-  "Estableciendo enlace satelital...",
-  "Sincronizando telemetría...",
-  "Recibiendo datos de la instalación...",
-  "Verificando integridad estructural...",
-  "Evaluando fotografías...",
+// Each entry: [message, show after N seconds]
+const TIMED_MESSAGES: [string, number][] = [
+  ["Conectando con el servidor...",          0],
+  ["Recibiendo datos de la instalación...", 4],
+  ["Analizando fotografías subidas...",      9],
+  ["Verificando criterios de seguridad...", 14],
+  ["Calculando puntuación final...",        19],
+  ["Casi listo, finalizando reporte...",    24],
+  ["Completando verificación...",           29],
 ];
 
 /* ─── theme map ─────────────────────────────────────────── */
