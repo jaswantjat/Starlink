@@ -35,27 +35,51 @@ export async function GET(req: NextRequest) {
   }
 
   let editUrl: string | null = null;
-  const fallbackUrl = `https://forms.starlink.eltex.es/t/8RpNqwgyxwus?row_id=${rowId}&edit_form=True`;
 
   try {
     const r2 = await fetch(`${BASEROW}/table/640/${rowId}/?user_field_names=true`, { headers });
     if (r2.ok) {
       const d2 = await r2.json();
       const fetchedUrl = d2['URL FillOut Instalación'];
-      if (fetchedUrl) {
-        if (fetchedUrl.includes('?')) {
-          editUrl = fetchedUrl + '&edit_form=True';
-        } else {
-          editUrl = fetchedUrl + '?edit_form=True';
-        }
+
+      const subRaw = d2['Empresa instaladora'];
+      let sub = '';
+      if (Array.isArray(subRaw) && subRaw.length > 0) {
+        sub = subRaw[0].value || '';
+      } else if (typeof subRaw === 'string') {
+        sub = subRaw;
+      }
+
+      const orderId = d2['ID del Pedido'] || '';
+      const customerName = d2['Nombre'] || '';
+      const address = d2['Dirección'] || '';
+
+      let starlinkId = d2['ID de Starlink'] || '';
+      if (typeof starlinkId === 'string' && starlinkId.toUpperCase().startsWith('ACC')) {
+        starlinkId = starlinkId.replace(/\s+/g, '');
       } else {
-        editUrl = fallbackUrl;
+        starlinkId = '';
+      }
+
+      const params = new URLSearchParams();
+      params.append('edit_form', 'True');
+      params.append('row_id', rowId);
+      if (sub) params.append('subcontrated', sub);
+      if (orderId) params.append('order_id', orderId);
+      if (customerName) params.append('customer_name', customerName);
+      if (address) params.append('address', address);
+      if (starlinkId) params.append('starlink_id', starlinkId);
+
+      if (fetchedUrl && fetchedUrl.includes('_t=')) {
+        editUrl = fetchedUrl + (fetchedUrl.includes('?') ? '&' : '?') + 'edit_form=True';
+      } else {
+        editUrl = `https://forms.starlink.eltex.es/t/8RpNqwgyxwus?${params.toString()}`;
       }
     } else {
-      editUrl = fallbackUrl;
+      editUrl = `https://forms.starlink.eltex.es/t/8RpNqwgyxwus?row_id=${rowId}&edit_form=True`;
     }
   } catch {
-    editUrl = fallbackUrl;
+    editUrl = `https://forms.starlink.eltex.es/t/8RpNqwgyxwus?row_id=${rowId}&edit_form=True`;
   }
 
   return NextResponse.json({ found: true, row, editUrl });
